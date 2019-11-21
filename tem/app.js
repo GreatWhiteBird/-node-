@@ -16,8 +16,10 @@ const err=require("koa-json-error")
 //生成图片链接
 const koaStatic=require("koa-static")
 
+//引进路由
 const index = require('./routes/index')
 const users = require('./routes/users')
+const home=require("./routes/home")
 
 // error handler
 onerror(app)
@@ -54,6 +56,7 @@ app.use(async (ctx, next) => {
 })
 
 // routes
+app.use(home.routes(), home.allowedMethods())
 app.use(index.routes(), index.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
 mongoose.connect(dbConfig.dbs,{

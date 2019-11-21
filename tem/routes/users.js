@@ -1,16 +1,21 @@
 const router = require('koa-router')()
 const Person =require("../dbs/module/person")
-const token=require("jsonwebtoken")
+const jsonwebtoken=require("jsonwebtoken")
 const User=require("../dbs/module/user")
 const config=require("../dbs/config")
+const {secret} =require("../dbs/config")       
+//用户认证中间件
+const jwt=require("koa-jwt")     
+
 router.prefix('/users')
 
-//用户认证中间件
-const jwt=require("koa-jwt")
-const auth=jwt(config.secret)
+const auth=jwt({secret}) //放在修改用户 和 删除用户的接口里面
+
 //校验用户中间件
 const checkOwner=async function(ctx,next){
-  if(ctx.params.id!==ctx.state.user.id){
+  if(ctx.request.body.id!==ctx.state.user.id){
+    console.log("----"+ctx.params.id)
+    console.log("----"+ctx.state.user.id)    
     ctx.throw(404,"该用户没有权限")
   }
   await next();
@@ -112,14 +117,16 @@ router.post("/getUsers",async function(ctx){
 })
 
 //修改用户信息
-router.post("/updateUser", auth,async function(ctx){
+router.post("/updateUser",auth,async function(ctx){
+  console.log("开始更新用户信息")
+  console.log(ctx.request.body)
   ctx.verifyParams({
-    id:{type:"string",require:false},
+    id      :{type:"string",require:false},
     username:{type:"string",require:false},
     password:{type:"string",require:false},
   })
   const user= await  User.findByIdAndUpdate(ctx.request.body.id,
-    ctx.request.body)
+    ctx.request.body,{new: true} )
   if(!user){
     ctx.throw(404,"用户不存在")
   }
@@ -141,15 +148,75 @@ router.post("/login",async function(ctx){
   const id=user._id;
   console.log(user);
   const name=user.username
-  const t= token.sign({name,id},config.secret);//token刷新时间
+  //用jsonwebtoken生成token、
+  const t= jsonwebtoken.sign({name,id},config.secret);//token刷新时间??
   ctx.body={
     token:t,
-    msg:token.verify(t,config.secret)
+    msg:jsonwebtoken.verify(t,config.secret)
   };
 })
 
-router.post("/delUser",async function(ctx){
-  const user= User.findByIdAndRemove(ctx.request.body._id);
-  ctx.body=user;
+//注销用户接口
+router.post("/delUser", auth, checkOwner,async function(ctx){
+  console.log(ctx.request.body)
+  ctx.verifyParams({
+    id:{type:"string",require:true}
+  })
+  const user= await User.findByIdAndRemove(ctx.request.body.id);
+  ctx.body="删除成功";
 })
+
+//获取用户的粉丝
+router.post("/:id/listFollowing",async function(ctx){
+  const user=await User.findById(ctx.params.id).select("+following").
+  populate("following");
+  if(!user){ctx.throw(404);}
+  ctx.body=user.following;//该用户关注了谁
+})
+
+
+//jwt 解析通过以后会把信息放进 state 域里面
+//用户关注某人   当用户登录以后 ，根据id值来关注其他用户
+router.post("/listFollowing/:id",auth, async function(ctx){
+    //获取通过token登录的用户id
+    console.log(ctx.state.user)
+    const me=await User.findById(ctx.state.user.id).select("+following");
+    console.log(me)
+    //把被关注的用户id添加进following字段,following是一个数组
+    //如果被关注的用户id已经在用户的列表里将不能关注
+    if(!me.following.map(id=>id.toString()).includes(ctx.params.id)){
+       me.following.push(ctx.params.id);
+       me.save();
+       ctx.body="关注成功"
+    }else{
+      ctx.body="用户已被关注"
+    }
+   
+})
+
+//取消关注某人
+router.post("/unFollowing/:id",auth, async function(ctx){
+  console.log(ctx.state.user)
+  console.log(ctx.params.id)
+  const me=await User.findById(ctx.state.user.id).select("+following");
+  console.log(me)
+  const index =me.following.map(id=>id.toString()).indexOf(ctx.params.id);
+  console.log(index)
+  //把被关注的用户id添加进following字段,following是一个数组
+  if(index>-1){
+     me.following.splice(index,1);
+     me.save();
+     ctx.body="取消关注成功"
+  }else{
+    ctx.body="未知错误"
+  }
+})
+
+//获取粉丝的接口 
+router.post("/getFollower/:id", async function(ctx){
+  //查询所有粉丝 following字段里有 该用户的的用户
+  const users=await User.find({following:ctx.params.id})
+  ctx.body=users;
+})
+
 module.exports = router
