@@ -21,6 +21,9 @@ const index = require('./routes/index')
 const users = require('./routes/users')
 const home=require("./routes/home")
 const topics=require("./routes/topics")
+const question=require("./routes/question")
+const people=require("./routes/people")
+const answer=require("./routes/answer")
 
 // error handler
 onerror(app)
@@ -60,7 +63,10 @@ app.use(async (ctx, next) => {
 app.use(home.routes(), home.allowedMethods())
 app.use(index.routes(), index.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
-app.use(topics.routes(), topics.allowedMethods())
+app.use(topics.routes(), topics.allowedMethods())  
+app.use(question.routes(), question.allowedMethods())
+app.use(people.routes(), people.allowedMethods())
+app.use(answer.routes(), answer.allowedMethods()) 
 mongoose.connect(dbConfig.dbs,{
   useNewUrlParser:true,
   useUnifiedTopology: true

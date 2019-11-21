@@ -5,6 +5,7 @@ let topicsSchema= new mongoose.Schema({
     topicsName:{type:String,require:true},//话题名称
     avatar_url:{type:String},
     introduction:{type:String,select:false}//介绍
+    
 },{timestamps:true}
 )
 module.exports =mongoose.model("Topics",topicsSchema) 
