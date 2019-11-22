@@ -10,7 +10,8 @@ let userSchema= new mongoose.Schema({
     following:{type:[{type:Schema.Types.ObjectId,ref:"User"}],select:false},
     //用户点过赞和踩的列表
     likingAnswers:{type:[{type:Schema.Types.ObjectId,ref:"Answer"}],select:false},
-    dislikingAnswers:{type:[{type:Schema.Types.ObjectId,ref:"Answer"}],select:false}
+    dislikingAnswers:{type:[{type:Schema.Types.ObjectId,ref:"Answer"}],select:false},
+    collectingAnswers:{type:[{type:Schema.Types.ObjectId,ref:"Answer"}],select:false},
     
 })
 module.exports =mongoose.model("User",userSchema) 

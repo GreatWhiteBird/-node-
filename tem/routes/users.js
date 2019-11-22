@@ -241,7 +241,40 @@ router.post("/unDisLikeAnswer/:id",auth,checkAnswer, async function(ctx){
   }
 })
 
+//收藏操作的接口 ---------------
+//显示用户收藏列表的接口
+router.post("/ListCollectingAnswer",auth, async function(ctx){
+  const user=await User.findById(ctx.state.user.id).select("+collectingAnswers").
+  populate("collectingAnswers");
+  if(!user){ctx.throw(404);}
+  ctx.body=user.collectingAnswers;
+})
 
+
+//收藏答案的接口 id：答案的id
+router.post("/collectionAnswer/:id",auth,checkAnswer, async function(ctx){
+
+    const me=await User.findById(ctx.state.user.id).select("+collectingAnswers");
+    console.log(me)
+    if(!me.collectingAnswers.map(id=>id.toString()).includes(ctx.params.id)){
+       me.collectingAnswers .push(ctx.params.id);
+       me.save();
+       ctx.body="收藏成功"
+    }
+   
+})
+
+//取消收藏答案的接口   id：答案的id
+router.post("/unCollectionAnswer/:id",auth,checkAnswer, async function(ctx){
+  const me=await User.findById(ctx.state.user.id).select("+collectingAnswers");
+  //如果答案的id存在于数组中 那就返回数组的下标
+  const index =me.collectingAnswers.map(id=>id.toString()).indexOf(ctx.params.id);
+  if(index>-1){
+     me.collectingAnswers.splice(index,1);
+     me.save();
+     ctx.body="取消收藏成功"
+  }
+})
 
 
 module.exports = router

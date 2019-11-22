@@ -5,7 +5,7 @@ let questionSchema= new mongoose.Schema({
     title:{type:String,require:true},//问题标题
     descrption:{type:String}, //问题描述
     questioner:{type:Schema.Types.ObjectId, ref:"User", require:true,select:false},//提问者
-    topics:{type:Schema.Types.ObjectId, ref:"Topics"  ,select:false}
+    topics:{type:Schema.Types.ObjectId, ref:"Topics"  ,select:false},
 },{timestamps:true}
 )
 module.exports =mongoose.model("Question",questionSchema) 
